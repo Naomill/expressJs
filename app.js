@@ -1,75 +1,68 @@
-var express = require('express');
-var app = express();
+const express = require('express'); // Import express
+const app = express(); // Create an instance of express
+app.use(express.json()); // Middleware to parse JSON bodies
 
-app.use(express.json());
+const cors = require('cors');
+app.use(cors());
 
+// Mock database
 let students = [
-    { id: 1, name: 'John', age: 18 },
-    { id: 2, name: 'Johnathan', age: 20 },
-    { id: 3, name: 'Sarah', age: 22 },
+    { id: 1, name: 'John', lastName: 'Doe' },
+    { id: 2, name: 'Jane', lastName: 'Smith' },
+    { id: 3, name: 'Naomill', lastName: '69' }
 ];
 
 // Get all students
-app.get('/students', function (request, response) {
-    response.json(students);
-});
+app.get('/students', (req, res) => res.json(students));
 
 // Get a student by ID
-app.get('/students/:id', function (request, response) {
-    let id = parseInt(request.params.id);
-    let student = students.find(s => s.id === id);
+app.get('/students/:id', (req, res) => {
+    const student = students.find(s => s.id === parseInt(req.params.id));
     if (student) {
-        response.json(student);
+        res.json(student);
     } else {
-        response.status(404).send('Student not found');
+        res.status(404).json({ error: 'Student not found' });
     }
 });
 
 // Add a new student
-app.post('/students', function (request, response) {
-    let newStudent = {
-        id: students.length ? students[students.length - 1].id + 1 : 1, // Auto-increment ID
-        name: request.body.name,
-        age: request.body.age
-    };
-
-    if (!newStudent.name || !newStudent.age) {
-        return response.status(400).send('Name and age are required');
+app.post('/students', (req, res) => {
+    const { name, lastName } = req.body;
+    if (!name || !lastName) {
+        return res.status(400).json({ error: 'Name and LastName are required' });
     }
-
+    const newStudent = { id: students.length + 1, name, lastName };
     students.push(newStudent);
-    response.status(201).json(newStudent);
+    res.status(201).json(newStudent);
 });
 
-// Edit a student
-app.put('/students/:id', function (request, response) {
-    let id = parseInt(request.params.id);
-    let student = students.find(s => s.id === id);
-
-    if (student) {
-        if (request.body.name) student.name = request.body.name;
-        if (request.body.age) student.age = request.body.age;
-
-        response.json(student);
+// Update a student by ID
+app.put('/students/:id', (req, res) => {
+    const { name, lastName } = req.body;
+    if (!name || !lastName) {
+        return res.status(400).json({ error: 'Name and LastName are required' });
+    }
+    const index = students.findIndex(s => s.id === parseInt(req.params.id));
+    if (index !== -1) {
+        students[index] = { id: parseInt(req.params.id), name, lastName };
+        res.json(students[index]);
     } else {
-        response.status(404).send('Student not found');
+        res.status(404).send('Student not found');
     }
 });
 
-// Delete a student
-app.delete('/students/:id', function (request, response) {
-    let id = parseInt(request.params.id);
-    let index = students.findIndex(s => s.id === id);
-
+// Delete a student by ID
+app.delete('/students/:id', (req, res) => {
+    const index = students.findIndex(s => s.id === parseInt(req.params.id));
     if (index !== -1) {
-        let deletedStudent = students.splice(index, 1);
-        response.json(deletedStudent);
+        students.splice(index, 1);
+        res.status(204).send(); // No content
     } else {
-        response.status(404).send('Student not found');
+        res.status(404).json({ error: 'Student not found' });
     }
 });
 
 // Start the server
-app.listen(3000, function () {
-    console.log('Server is running on port 3000');
-});
+const PORT = 3000; // Define the port
+app.listen(PORT, () => console.log(`Server is running on http://localhost:${PORT}`));
+
